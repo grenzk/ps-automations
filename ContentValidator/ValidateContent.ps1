@@ -1,8 +1,8 @@
-$sourceFile = './source.html'
-$targetFile = './target.html'
+$sourceFile = "$PSScriptRoot/source.html"
+$targetFile = "$PSScriptRoot/target.html"
 
-$sourceFileExists = Test-Path $sourceFile
-$targetFileExists = Test-Path $targetFile
+$sourceFileExists = Test-Path -Path $sourceFile
+$targetFileExists = Test-Path -Path $targetFile
 
 
 if ($sourceFileExists -and $targetFileExists) {
