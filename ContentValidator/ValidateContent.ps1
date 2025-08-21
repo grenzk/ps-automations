@@ -1,24 +1,40 @@
-# $html = ConvertFrom-Html -Url "https://www.scrapethissite.com/pages/simple/" -Engine AngleSharp
-$html = Get-Content -Path "$PSScriptRoot/modified.html" -Raw | ConvertFrom-Html -Engine AngleSharp
+param(
+    [Parameter(Mandatory)]
+    [string]$originalUrl,
 
-$head = $html.QuerySelector("head")
-$body = $html.QuerySelector("body")
-$divDoc = "<div id='custom-article-div' title='fLoadTKOTheme'></div>" | ConvertFrom-HTML -Engine AngleSharp
-$newDiv = $divDoc.QuerySelector("#custom-article-div")
+    [Parameter(Mandatory)]
+    [string]$modifiedUrl
+)
 
-$comment = "<!-- $($head.OuterHtml) -->"
-$commentFragment = "<span id='temp'>$comment</span>" | ConvertFrom-Html -Engine AngleSharp
-$commentNode = $commentFragment.QuerySelector("#temp").FirstChild
+$originalHtml = ConvertFrom-HTML -Url $originalUrl -Engine AngleSharp
+$modifiedHtml = ConvertFrom-HTML -Url $modifiedUrl -Engine AngleSharp
+
+$head = $originalHtml.QuerySelector('head')
+$body = $originalHtml.QuerySelector('body')
+
+$newDiv = ("<div id='custom-article-div' title='fLoadTKOTheme'></div>" |
+        ConvertFrom-HTML -Engine AngleSharp).QuerySelector('div')
+
+$headComment = "<!-- $($head.OuterHtml) -->"
+$commentNode = ("<span>$headComment</span>" |
+        ConvertFrom-HTML -Engine AngleSharp).QuerySelector('span').FirstChild
 
 while ($body.FirstChild) {
-  [void]$newDiv.AppendChild($body.FirstChild)
+    [void]$newDiv.AppendChild($body.FirstChild)
 }
 
 $body.Remove()
+[void]$originalHtml.ReplaceChild($commentNode, $head)
+[void]$originalHtml.AppendChild($newDiv)
 
-[void]$html.ReplaceChild($commentNode, $head)
-[void]$html.AppendChild($newDiv)
-$html.InnerHtml | Set-Content -Path "$PSScriptRoot/original.html"
+$originalPath = Join-Path $PSScriptRoot 'original.html'
+$originalHtml.InnerHtml | Set-Content -Path $originalPath
 
-# code --diff "$PSScriptRoot/original.html" "$PSScriptRoot/modified.html"
+$modifiedPath = Join-Path $PSScriptRoot 'modified.html'
+$modifiedHtml.InnerHtml | Set-Content -Path $modifiedPath
+
+prettier --write $originalPath
+prettier --write $modifiedPath
+
+code --diff $originalPath $modifiedPath
 
