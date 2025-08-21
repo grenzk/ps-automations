@@ -1,46 +1,49 @@
 param(
-    [Parameter(Mandatory)]
-    [string]$originalUrl,
-
-    [Parameter(Mandatory)]
-    [string]$modifiedUrl
+    [string]$OriginalUrl,
+    [string]$ModifiedUrl
 )
 
-try {
-    Write-Host "`n📥 Downloading HTML content..."
-    $originalHtml = ConvertFrom-HTML -Url $originalUrl -Engine AngleSharp
-    $modifiedHtml = ConvertFrom-HTML -Url $modifiedUrl -Engine AngleSharp
-}
-catch {
-    Write-Error "❌ Failed to download or parse HTML. Error: $_"
-    exit 1
-}
-
-Write-Host '🔧 Transforming original HTML for diff comparison...'
-$head = $originalHtml.QuerySelector('head')
-$body = $originalHtml.QuerySelector('body')
-
-$newDiv = ("<div id='custom-article-div' title='fLoadTKOTheme'></div>" |
-        ConvertFrom-HTML -Engine AngleSharp).QuerySelector('div')
-
-$headComment = "<!-- $($head.OuterHtml) -->"
-$commentNode = ("<span>$headComment</span>" |
-        ConvertFrom-HTML -Engine AngleSharp).QuerySelector('span').FirstChild
-
-while ($body.FirstChild) {
-    [void]$newDiv.AppendChild($body.FirstChild)
-}
-
-$body.Remove()
-[void]$originalHtml.ReplaceChild($commentNode, $head)
-[void]$originalHtml.AppendChild($newDiv)
-
-Write-Host '💾 Saving files...'
 $originalPath = Join-Path $PSScriptRoot 'original.html'
-$originalHtml.InnerHtml | Set-Content -Path $originalPath
-
 $modifiedPath = Join-Path $PSScriptRoot 'modified.html'
-$modifiedHtml.InnerHtml | Set-Content -Path $modifiedPath
+
+if ([string]::IsNullOrWhiteSpace((Get-Content -Raw -Path $originalPath)) -and
+    [string]::IsNullOrWhiteSpace((Get-Content -Raw -Path $modifiedPath))) {
+    try {
+        Write-Host "`n📥 Downloading HTML content..."
+        $originalHtml = ConvertFrom-HTML -Url $OriginalUrl -Engine AngleSharp
+        $modifiedHtml = ConvertFrom-HTML -Url $ModifiedUrl -Engine AngleSharp
+    }
+    catch {
+        Write-Error "❌ Failed to download or parse HTML. Error: $_"
+        exit 1
+    }
+
+    Write-Host '🔧 Transforming original HTML for diff comparison...'
+    $head = $originalHtml.QuerySelector('head')
+    $body = $originalHtml.QuerySelector('body')
+
+    $newDiv = ("<div id='custom-article-div' title='fLoadTKOTheme'></div>" |
+            ConvertFrom-HTML -Engine AngleSharp).QuerySelector('div')
+
+    $headComment = "<!-- $($head.OuterHtml) -->"
+    $commentNode = ("<span>$headComment</span>" |
+            ConvertFrom-HTML -Engine AngleSharp).QuerySelector('span').FirstChild
+
+    while ($body.FirstChild) {
+        [void]$newDiv.AppendChild($body.FirstChild)
+    }
+
+    $body.Remove()
+    [void]$originalHtml.ReplaceChild($commentNode, $head)
+    [void]$originalHtml.AppendChild($newDiv)
+
+    Write-Host '💾 Saving files...'
+    $originalHtml.InnerHtml | Set-Content -Path $originalPath
+    $modifiedHtml.InnerHtml | Set-Content -Path $modifiedPath
+}
+else {
+    Write-Host "`n📄 Both files already have content."
+}
 
 Write-Host '🎨 Formatting with Prettier...'
 prettier --write $originalPath
@@ -56,5 +59,5 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 code --diff $originalPath $modifiedPath
-Write-Host "✅ Done! Diff window opened.`n"
+Write-Host "✅ Diff ready in VS Code.`n"
 
