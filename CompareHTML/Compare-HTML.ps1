@@ -3,8 +3,8 @@ param(
     [string]$ModifiedUrl
 )
 
-$originalPath = Join-Path $PSScriptRoot 'original.html'
-$modifiedPath = Join-Path $PSScriptRoot 'modified.html'
+$originalPath = Join-Path -Path $PSScriptRoot -ChildPath 'original.html'
+$modifiedPath = Join-Path -Path $PSScriptRoot -ChildPath 'modified.html'
 
 if ([string]::IsNullOrWhiteSpace((Get-Content -Raw -Path $originalPath)) -and
     [string]::IsNullOrWhiteSpace((Get-Content -Raw -Path $modifiedPath))) {
