@@ -1,7 +1,4 @@
-param(
-    [string]$OriginalUrl,
-    [string]$ModifiedUrl
-)
+param([string]$OriginalUrl)
 
 $originalPath = Join-Path -Path $PSScriptRoot -ChildPath 'original.html'
 $modifiedPath = Join-Path -Path $PSScriptRoot -ChildPath 'modified.html'
@@ -11,7 +8,7 @@ if ([string]::IsNullOrWhiteSpace((Get-Content -Raw -Path $originalPath)) -and
     try {
         Write-Host "`n📥 Downloading HTML content..."
         $originalHtml = ConvertFrom-HTML -Url $OriginalUrl -Engine AngleSharp
-        $modifiedHtml = ConvertFrom-HTML -Url $ModifiedUrl -Engine AngleSharp
+        $modifiedHtml = Get-Clipboard
     }
     catch {
         Write-Error "❌ Failed to download or parse HTML. Error: $_"
@@ -39,7 +36,7 @@ if ([string]::IsNullOrWhiteSpace((Get-Content -Raw -Path $originalPath)) -and
 
     Write-Host '💾 Saving files...'
     $originalHtml.InnerHtml | Set-Content -Path $originalPath
-    $modifiedHtml.InnerHtml | Set-Content -Path $modifiedPath
+    $modifiedHtml | Set-Content -Path $modifiedPath
 }
 else {
     Write-Host "`n📄 Both files already have content."
