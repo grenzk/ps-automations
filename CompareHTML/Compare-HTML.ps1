@@ -45,14 +45,12 @@ else {
 Write-Host '🎨 Formatting with Prettier...'
 prettier --write $originalPath
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "❌ Prettier failed to format $originalPath."
-    exit 1
+    Write-Warning "⚠️ Prettier failed to format $originalPath."
 }
 
 prettier --write $modifiedPath
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "❌ Prettier failed to format $modifiedPath."
-    exit 1
+    Write-Warning "⚠️ Prettier failed to format $modifiedPath."
 }
 
 code --diff $originalPath $modifiedPath
