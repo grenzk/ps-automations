@@ -1,4 +1,6 @@
-param([string]$ReferenceUrl)
+param(
+    [string]$ReferenceUrl
+)
 
 $referencePath = Join-Path -Path $PSScriptRoot -ChildPath 'reference.html'
 $modifiedPath = Join-Path -Path $PSScriptRoot -ChildPath 'modified.html'
