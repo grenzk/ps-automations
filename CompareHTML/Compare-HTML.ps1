@@ -1,23 +1,34 @@
-param([string]$OriginalUrl)
+param([string]$ReferenceUrl)
 
-$originalPath = Join-Path -Path $PSScriptRoot -ChildPath 'original.html'
+$referencePath = Join-Path -Path $PSScriptRoot -ChildPath 'reference.html'
 $modifiedPath = Join-Path -Path $PSScriptRoot -ChildPath 'modified.html'
 
-if ([string]::IsNullOrWhiteSpace((Get-Content -Raw -Path $originalPath)) -and
+if ([string]::IsNullOrWhiteSpace((Get-Content -Raw -Path $referencePath)) -and
     [string]::IsNullOrWhiteSpace((Get-Content -Raw -Path $modifiedPath))) {
     try {
-        Write-Host "`n📥 Downloading HTML content..."
-        $originalHtml = ConvertFrom-HTML -Url $OriginalUrl -Engine AngleSharp
-        $modifiedHtml = Get-Clipboard
+        Write-Host "`n📥 Downloading reference content from: $ReferenceUrl"
+        $referenceHtml = ConvertFrom-HTML -Url $ReferenceUrl -Engine AngleSharp
+        Write-Host "✅ Reference content downloaded successfully`n"
+
+        Write-Host '📋 Now copy the MODIFIED HTML content, then press Enter...'
+        Read-Host
+        $modifiedHtml = Get-Clipboard -Raw
+
+        if ([string]::IsNullOrWhiteSpace($modifiedHtml)) {
+            Write-Error '❌ No content found in clipboard. Please copy the modified HTML and try again.'
+            exit 1
+        }
+
+        Write-Host "✅ Modified content captured ($($modifiedHtml.Length) characters)`n"
     }
     catch {
         Write-Error "❌ Failed to download or parse HTML. Error: $_"
         exit 1
     }
 
-    Write-Host '🔧 Transforming original HTML for diff comparison...'
-    $head = $originalHtml.QuerySelector('head')
-    $body = $originalHtml.QuerySelector('body')
+    Write-Host '🔧 Transforming reference HTML for diff comparison...'
+    $head = $referenceHtml.QuerySelector('head')
+    $body = $referenceHtml.QuerySelector('body')
 
     $newDiv = ("<div id='custom-article-div' title='fLoadTKOTheme'></div>" |
             ConvertFrom-HTML -Engine AngleSharp).QuerySelector('div')
@@ -31,21 +42,21 @@ if ([string]::IsNullOrWhiteSpace((Get-Content -Raw -Path $originalPath)) -and
     }
 
     $body.Remove()
-    [void]$originalHtml.ReplaceChild($commentNode, $head)
-    [void]$originalHtml.AppendChild($newDiv)
+    [void]$referenceHtml.ReplaceChild($commentNode, $head)
+    [void]$referenceHtml.AppendChild($newDiv)
 
     Write-Host '💾 Saving files...'
-    $originalHtml.InnerHtml | Set-Content -Path $originalPath
+    $referenceHtml.InnerHtml | Set-Content -Path $referencePath
     $modifiedHtml | Set-Content -Path $modifiedPath
 }
 else {
-    Write-Host "`n📄 Both files already have content."
+    Write-Host "`n📄 Both files already have content"
 }
 
 Write-Host '🎨 Formatting with Prettier...'
-prettier --write $originalPath
+prettier --write $referencePath
 if ($LASTEXITCODE -ne 0) {
-    Write-Warning "⚠️ Prettier failed to format $originalPath."
+    Write-Warning "⚠️ Prettier failed to format $referencePath."
 }
 
 prettier --write $modifiedPath
@@ -53,6 +64,6 @@ if ($LASTEXITCODE -ne 0) {
     Write-Warning "⚠️ Prettier failed to format $modifiedPath."
 }
 
-code --diff $originalPath $modifiedPath
-Write-Host "✅ Diff ready in VS Code.`n"
+code --diff $referencePath $modifiedPath
+Write-Host "`n✅ Diff ready in VS Code`n"
 
