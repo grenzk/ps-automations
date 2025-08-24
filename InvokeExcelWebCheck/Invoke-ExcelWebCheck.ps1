@@ -64,9 +64,14 @@ foreach ($row in $data) {
     $currentItem++
 
     $percentComplete = [math]::Round(($currentItem / $totalItems) * 100, 2)
-    Write-Progress -Id 1 -Activity 'Scanning content' `
-        -Status "Processing $currentItem of $totalItems ($percentComplete%)" `
-        -PercentComplete $percentComplete
+    $progressParams = @{
+        Id              = 1
+        Activity        = 'Scanning content'
+        Status          = "Processing $currentItem of $totalItems ($percentComplete%)"
+        PercentComplete = $percentComplete
+    }
+
+    Write-Progress @progressParams
 
     if ([string]::IsNullOrWhiteSpace($row.Domain)) {
         Write-Warning "Row ${currentItem}: Empty domain, skipping..."
@@ -77,8 +82,6 @@ foreach ($row in $data) {
 
     Start-Sleep -Milliseconds 500
 }
-
-Write-Progress -Id 1 -Activity 'Scanning content' -Completed
 
 Write-Host "Exporting results to: $OutputFile"
 $data | Export-Excel -AutoSize -FreezeTopRow -BoldTopRow -Path $OutputFile
@@ -92,5 +95,3 @@ Write-Host ('Matches     : {0}' -f $matchCount) -ForegroundColor Green
 Write-Host ('No matches  : {0}' -f ($totalItems - $matchCount)) -ForegroundColor Red
 Write-Host ('Output file : {0}' -f $OutputFile)
 Write-Host "`n✅ Script completed successfully`n"
-
-
