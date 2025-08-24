@@ -66,4 +66,3 @@ if ($LASTEXITCODE -ne 0) {
 
 code --diff $referencePath $modifiedPath
 Write-Host "`n✅ Diff ready in VS Code`n"
-

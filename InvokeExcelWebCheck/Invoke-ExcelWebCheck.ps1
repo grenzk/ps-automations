@@ -32,7 +32,7 @@ function Test-WebpageContent {
         $hasMatch
     }
     catch {
-        Write-Error "Failed to check $url. $_"
+        Write-Error "Failed to check $url. $($_.Exception.Message)"
         $false
     }
 }
@@ -47,9 +47,7 @@ if (-not (Test-Path $File)) {
 
 Write-Host "Reading Excel file: $File"
 $data = Import-Excel -DataOnly -Path $File
-$data | ForEach-Object -Process {
-    $_ | Add-Member -NotePropertyName 'HasMatch' -NotePropertyValue $false
-}
+$data | ForEach-Object -Process { $_ | Add-Member -NotePropertyName 'HasMatch' -NotePropertyValue $false }
 $totalItems = $data.Count
 
 if ($totalItems -eq 0) {
