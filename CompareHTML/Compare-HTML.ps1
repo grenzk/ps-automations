@@ -11,22 +11,20 @@ if ([string]::IsNullOrWhiteSpace((Get-Content -Raw -Path $referencePath)) -and
         Write-Host "`n📥 Downloading reference content from: $ReferenceUrl"
         $referenceHtml = ConvertFrom-HTML -Url $ReferenceUrl -Engine AngleSharp
         Write-Host "✅ Reference content downloaded successfully`n"
-
-        Write-Host '📋 Now copy the MODIFIED HTML content, then press Enter...'
-        Read-Host
-        $modifiedHtml = Get-Clipboard -Raw
-
-        if ([string]::IsNullOrWhiteSpace($modifiedHtml)) {
-            Write-Error '❌ No content found in clipboard. Please copy the modified HTML and try again.'
-            exit 1
-        }
-
-        Write-Host "✅ Modified content captured ($($modifiedHtml.Length) characters)`n"
     }
     catch {
-        Write-Error "❌ Failed to download or parse HTML. Error: $_"
-        exit 1
+        throw "❌ Failed to download or parse HTML. $($_.Exception.Message)"
     }
+
+    Write-Host '📋 Now copy the MODIFIED HTML content, then press Enter...'
+    Read-Host
+    $modifiedHtml = Get-Clipboard -Raw
+
+    if ([string]::IsNullOrWhiteSpace($modifiedHtml)) {
+        throw '❌ No content found in clipboard. Please copy the modified HTML and try again.'
+    }
+
+    Write-Host "✅ Modified content captured ($($modifiedHtml.Length) characters)`n"
 
     Write-Host '🔧 Transforming reference HTML for diff comparison...'
     $head = $referenceHtml.QuerySelector('head')
